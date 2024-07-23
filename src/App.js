@@ -4,6 +4,8 @@ import {
   startAuthentication,
 } from '@simplewebauthn/browser';
 
+const API_BASE_URL = 'http://localhost:5001'; // APIサーバーのベースURL
+
 const App = () => {
   const [user, setUser] = useState(null);
   const [error, setError] = useState('');
@@ -21,21 +23,27 @@ const App = () => {
       const username = prompt('Enter a username:');
       if (!username) return;
 
-      // In a real app, you'd make an API call to your server to start registration
-      const options = await fetch('/generate-registration-options', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username }),
-      }).then((res) => res.json());
+      // API call to server to start registration
+      const options = await fetch(
+        `${API_BASE_URL}/generate-registration-options`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username }),
+        }
+      ).then((res) => res.json());
 
       const result = await startRegistration(options);
 
-      // In a real app, you'd send this result to your server for verification
-      const verificationResponse = await fetch('/verify-registration', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(result),
-      }).then((res) => res.json());
+      // Send result to server for verification
+      const verificationResponse = await fetch(
+        `${API_BASE_URL}/verify-registration`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username, response: result }),
+        }
+      ).then((res) => res.json());
 
       if (verificationResponse.verified) {
         setUser({ username });
@@ -53,21 +61,27 @@ const App = () => {
       const username = prompt('Enter your username:');
       if (!username) return;
 
-      // In a real app, you'd make an API call to your server to start authentication
-      const options = await fetch('/generate-authentication-options', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username }),
-      }).then((res) => res.json());
+      // API call to server to start authentication
+      const options = await fetch(
+        `${API_BASE_URL}/generate-authentication-options`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username }),
+        }
+      ).then((res) => res.json());
 
       const result = await startAuthentication(options);
 
-      // In a real app, you'd send this result to your server for verification
-      const verificationResponse = await fetch('/verify-authentication', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(result),
-      }).then((res) => res.json());
+      // Send result to server for verification
+      const verificationResponse = await fetch(
+        `${API_BASE_URL}/verify-authentication`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username, response: result }),
+        }
+      ).then((res) => res.json());
 
       if (verificationResponse.verified) {
         setUser({ username });
