@@ -1,12 +1,12 @@
 const express = require('express');
 const cors = require('cors');
+const crypto = require('crypto');
 const {
   generateRegistrationOptions,
   verifyRegistrationResponse,
   generateAuthenticationOptions,
   verifyAuthenticationResponse,
 } = require('@simplewebauthn/server');
-const { isoBase64URL } = require('@simplewebauthn/server/helpers');
 
 const app = express();
 const port = 5001;
@@ -22,13 +22,19 @@ const rpName = 'WebAuthn Demo';
 const rpID = 'localhost';
 const origin = `http://${rpID}:3000`;
 
+// ユーザーIDを生成する関数
+function generateUserID(username) {
+  return crypto.createHash('sha256').update(username).digest();
+}
+
 app.post('/generate-registration-options', async (req, res) => {
   const { username } = req.body;
 
   // ユーザーが存在しない場合、新規作成
   if (!users[username]) {
+    const userID = generateUserID(username);
     users[username] = {
-      id: isoBase64URL.encode(Buffer.from(username)),
+      id: userID,
       username,
       devices: [],
     };
@@ -76,7 +82,7 @@ app.post('/verify-registration', async (req, res) => {
       const { credentialPublicKey, credentialID, counter } = registrationInfo;
 
       const existingDevice = user.devices.find(
-        (device) => device.credentialID === credentialID
+        (device) => Buffer.compare(device.credentialID, credentialID) === 0
       );
 
       if (!existingDevice) {
@@ -131,7 +137,11 @@ app.post('/verify-authentication', async (req, res) => {
 
   try {
     const device = user.devices.find(
-      (device) => device.credentialID === response.id
+      (device) =>
+        Buffer.compare(
+          device.credentialID,
+          Buffer.from(response.id, 'base64')
+        ) === 0
     );
 
     if (!device) {
