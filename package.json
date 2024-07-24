@@ -4,13 +4,14 @@
   "private": true,
   "dependencies": {
     "@simplewebauthn/browser": "^10.0.0",
+    "@simplewebauthn/server": "^10.0.1",
     "@testing-library/jest-dom": "^5.17.0",
     "@testing-library/react": "^13.4.0",
     "@testing-library/user-event": "^13.5.0",
     "cors": "^2.8.5",
     "express": "^4.19.2",
-    "react": "^18.3.1",
-    "react-dom": "^18.3.1",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
     "react-scripts": "5.0.1",
     "tailwindcss": "^3.4.6",
     "web-vitals": "^2.1.4"
@@ -38,5 +39,8 @@
       "last 1 firefox version",
       "last 1 safari version"
     ]
+  },
+  "volta": {
+    "node": "22.5.1"
   }
 }
