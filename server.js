@@ -102,27 +102,42 @@ app.post('/verify-registration', async (req, res) => {
   }
 });
 
-app.post('/generate-authentication-options', (req, res) => {
-  const { username } = req.body;
+app.post('/generate-authentication-options', async (req, res) => {
+  try {
+    const { username } = req.body;
 
-  const user = users[username];
-  if (!user) {
-    return res.status(400).json({ error: 'User not found' });
+    const user = users[username];
+    if (!user) {
+      return res.status(400).json({ error: 'User not found' });
+    }
+
+    const options = await generateAuthenticationOptions({
+      rpID,
+      allowCredentials: user.devices.map((device) => ({
+        id: device.credentialID,
+        type: 'public-key',
+      })),
+      userVerification: 'preferred',
+    });
+
+    // チャレンジを保存（実際のアプリケーションではセッションに保存するべきです）
+    user.currentChallenge = options.challenge;
+
+    console.log('Generated authentication options:', options); // デバッグ用
+
+    // オプションオブジェクトの内容を確認
+    if (!options.challenge) {
+      console.error('Authentication options do not contain a challenge');
+      return res
+        .status(500)
+        .json({ error: 'Failed to generate authentication options' });
+    }
+
+    res.json(options);
+  } catch (error) {
+    console.error('Error generating authentication options:', error);
+    res.status(500).json({ error: 'Internal server error' });
   }
-
-  const options = generateAuthenticationOptions({
-    rpID,
-    allowCredentials: user.devices.map((device) => ({
-      id: device.credentialID,
-      type: 'public-key',
-    })),
-    userVerification: 'preferred',
-  });
-
-  // チャレンジを保存（実際のアプリケーションではセッションに保存するべきです）
-  user.currentChallenge = options.challenge;
-
-  res.json(options);
 });
 
 app.post('/verify-authentication', async (req, res) => {
@@ -136,10 +151,16 @@ app.post('/verify-authentication', async (req, res) => {
   const expectedChallenge = user.currentChallenge;
 
   try {
+    console.log(user);
+    console.log(user.devices);
+    console.log('---');
+    console.log(response.id);
+    console.log(Buffer.from(response.id, 'base64'));
+
     const device = user.devices.find(
       (device) =>
         Buffer.compare(
-          device.credentialID,
+          Buffer.from(device.credentialID, 'base64'),
           Buffer.from(response.id, 'base64')
         ) === 0
     );
