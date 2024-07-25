@@ -11,7 +11,6 @@ const App = () => {
   const [error, setError] = useState('');
 
   useEffect(() => {
-    // Check if user is already logged in
     const loggedInUser = localStorage.getItem('user');
     if (loggedInUser) {
       setUser(JSON.parse(loggedInUser));
@@ -24,14 +23,20 @@ const App = () => {
       if (!username) return;
 
       // API call to server to start registration
-      const options = await fetch(
+      const optionsResponse = await fetch(
         `${API_BASE_URL}/generate-registration-options`,
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ username }),
         }
-      ).then((res) => res.json());
+      );
+
+      if (!optionsResponse.ok) {
+        throw new Error('Failed to fetch registration options');
+      }
+
+      const options = await optionsResponse.json();
 
       const result = await startRegistration(options);
 
@@ -43,16 +48,23 @@ const App = () => {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ username, response: result }),
         }
-      ).then((res) => res.json());
+      );
 
-      if (verificationResponse.verified) {
+      if (!verificationResponse.ok) {
+        throw new Error('Failed to verify registration');
+      }
+
+      const verificationResult = await verificationResponse.json();
+
+      if (verificationResult.verified) {
         setUser({ username });
         localStorage.setItem('user', JSON.stringify({ username }));
       } else {
         setError('Registration failed');
       }
     } catch (error) {
-      setError('Registration failed: ' + error.message);
+      console.error('Registration error:', error);
+      setError(`Registration failed: ${error.message}`);
     }
   };
 
@@ -62,14 +74,21 @@ const App = () => {
       if (!username) return;
 
       // API call to server to start authentication
-      const options = await fetch(
+      const optionsResponse = await fetch(
         `${API_BASE_URL}/generate-authentication-options`,
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ username }),
         }
-      ).then((res) => res.json());
+      );
+
+      if (!optionsResponse.ok) {
+        throw new Error('Failed to fetch authentication options');
+      }
+      console.log(optionsResponse);
+
+      const options = await optionsResponse.json();
 
       const result = await startAuthentication(options);
 
@@ -81,16 +100,25 @@ const App = () => {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ username, response: result }),
         }
-      ).then((res) => res.json());
+      );
 
-      if (verificationResponse.verified) {
+      console.log(verificationResponse);
+
+      if (!verificationResponse.ok) {
+        throw new Error('Failed to verify authentication');
+      }
+
+      const verificationResult = await verificationResponse.json();
+
+      if (verificationResult.verified) {
         setUser({ username });
         localStorage.setItem('user', JSON.stringify({ username }));
       } else {
         setError('Authentication failed');
       }
     } catch (error) {
-      setError('Authentication failed: ' + error.message);
+      console.error('Authentication error:', error);
+      setError(`Authentication failed: ${error.message}`);
     }
   };
 
